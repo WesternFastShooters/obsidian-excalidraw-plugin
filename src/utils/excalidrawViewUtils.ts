@@ -361,7 +361,6 @@ export function tmpBruteForceCleanup (view: ExcalidrawView) {
   window.setTimeout(()=>{
     if(!view) return;
     // const cleanupHTMLElement = (el: Element) => {
-    //   //console.log(el);
     //   while(el.firstElementChild) {
     //     cleanupHTMLElement(el.firstElementChild);
     //     el.removeChild(el.firstElementChild);
@@ -548,7 +547,7 @@ export function getViewColorPalette(
   const basePalette = colorPalette[palette];
 
   if (!Array.isArray(basePalette)) {
-    return [basePalette];
+    return [basePalette as any];
   }
 
   const cmFactory = view.hookServer?.getCM?.bind(view.hookServer) ?? view.plugin.ea.getCM.bind(view.plugin.ea);

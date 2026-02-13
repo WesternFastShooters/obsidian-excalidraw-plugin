@@ -1108,7 +1108,7 @@ export class ExcalidrawAutomate {
       const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
       let outString = `# Excalidraw Data\n\n## Text Elements\n`;
       textElements.forEach(te=> {
-        outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
+        outString += `${(te as { rawText?: string }).rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
       });
 
       const elementsWithLinks = this.getElements().filter( el => el.type !== "text" && el.link)
@@ -2140,7 +2140,7 @@ export class ExcalidrawAutomate {
     if(result?.error) return result.error;
 
     if(result?.elements) {
-      result.elements.forEach(el=>{
+      result.elements.forEach((el: ExcalidrawElement)=>{
         ids.push(el.id);
         this.elementsDict[el.id] = el;
       })
@@ -3438,7 +3438,7 @@ export class ExcalidrawAutomate {
     const {x, y, width, height, id} = element;
     return elements
       .filter(el => {
-        if((el.type==="frame" && el.frameRole==="marker")) return false;
+        if((el.type==="frame" && (el as { frameRole?: string }).frameRole==="marker")) return false;
         if(el.id === id) return true;
         const {topX, topY, width:w, height:h} = this.getBoundingBox([el]);
         const elLeft = topX;
@@ -3535,7 +3535,7 @@ export class ExcalidrawAutomate {
   getCommonGroupForElements(elements: ExcalidrawElement[]): string {
     const groupId = elements
       .map(el=>el.groupIds)
-      .reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
+      .reduce((prev,cur)=>cur.filter((v: string)=>prev.includes(v)));
     return groupId.length > 0 ? groupId[0] : null;
   }
 
@@ -3564,8 +3564,8 @@ export class ExcalidrawAutomate {
     }
 
     const conditionFN = container.length === 1
-      ? (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id)) || el === container[0]
-      : (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id));
+      ? (el: ExcalidrawElement) => el.groupIds.some((id: string)=>element.groupIds.includes(id)) || el === container[0]
+      : (el: ExcalidrawElement) => el.groupIds.some((id: string)=>element.groupIds.includes(id));
 
     if(!includeFrameElements) {
       return elements.filter(el=>conditionFN(el));
@@ -3798,11 +3798,12 @@ export class ExcalidrawAutomate {
       return;
     }
     const API: ExcalidrawImperativeAPI = this.getExcalidrawAPI();
+    const apiWithSelect = API as ExcalidrawImperativeAPI & { selectElements?: (els: ExcalidrawElement[]) => void };
     if(typeof elements[0] === "string") {
       const els = this.getViewElements().filter(el=>(elements as string[]).includes(el.id));
-      API.selectElements(els);
+      apiWithSelect.selectElements?.(els);
     } else {
-      API.selectElements(elements as ExcalidrawElement[]);
+      apiWithSelect.selectElements?.(elements as ExcalidrawElement[]);
     }
   };
 

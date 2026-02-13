@@ -1,12 +1,27 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "paths": {
+      "@excalidraw/common": ["node_modules/@zsviczian/excalidraw/types/common/src/index.d.ts"],
+      "@excalidraw/common/*": ["node_modules/@zsviczian/excalidraw/types/common/src/*"],
+      "@excalidraw/math": ["node_modules/@zsviczian/excalidraw/types/math/src/index.d.ts"],
+      "@excalidraw/math/*": ["node_modules/@zsviczian/excalidraw/types/math/src/*"],
+      "@excalidraw/element": ["node_modules/@zsviczian/excalidraw/types/element/src/index.d.ts"],
+      "@excalidraw/element/*": ["node_modules/@zsviczian/excalidraw/types/element/src/*"],
+      "@excalidraw/excalidraw/*": ["node_modules/@zsviczian/excalidraw/types/excalidraw/*"],
+      "@excalidraw/utils": ["node_modules/@zsviczian/excalidraw/types/utils/src/index.d.ts"],
+      "@excalidraw/utils/*": ["node_modules/@zsviczian/excalidraw/types/utils/src/*"],
+      "@zsviczian/excalidraw/types/element/src": ["node_modules/@zsviczian/excalidraw/types/element/src/index.d.ts"],
+      "@zsviczian/colormaster": ["node_modules/@zsviczian/colormaster/index.d.ts"],
+      "@zsviczian/colormaster/*": ["node_modules/@zsviczian/colormaster/*"]
+    },
     "sourceMap": false,
+    "skipLibCheck": true,
     "module": "es2020",
     "target": "es2022", //min es2017 because script engine requires for async execution and min es2018 for named capture groups
     "allowJs": false,
     "noImplicitAny": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "importHelpers": true,
     "resolveJsonModule": true,

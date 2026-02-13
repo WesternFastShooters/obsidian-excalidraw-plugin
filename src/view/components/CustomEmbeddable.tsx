@@ -1,4 +1,4 @@
-import {  ExcalidrawEmbeddableElement,  } from "@zsviczian/excalidraw/types/element/src/types";
+import {  ExcalidrawEmbeddableElement, NonDeletedExcalidrawElement,  } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, requireApiVersion, WorkspaceLeaf,  } from "obsidian";
 import * as React from "react";
@@ -345,7 +345,7 @@ function RenderObsidianView(
   linkText: string;
   view: ExcalidrawView;
   containerRef: React.RefObject<HTMLDivElement>;
-  activeEmbeddable: {element: ExcalidrawEmbeddableElement; state: string};
+  activeEmbeddable: {element: ExcalidrawEmbeddableElement | NonDeletedExcalidrawElement; state: string};
   theme: string;
   canvasColor: string;
   selectedElementId: string;

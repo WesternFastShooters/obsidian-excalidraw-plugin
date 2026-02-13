@@ -85,9 +85,12 @@ function compressLanguageFile(lang) {
   return LZString.compressToBase64(minifyCode(`x = ${content};`));
 }
 
+// @whfzgyx/excalidraw (and official build) use dist/prod|dev/index.js; @zsviczian/excalidraw uses dist/excalidraw.*.min.js
+const excalidrawDistDir = "./node_modules/@zsviczian/excalidraw/dist";
+const hasLegacyBundle = fs.existsSync(path.join(excalidrawDistDir, "excalidraw.production.min.js"));
 const excalidraw_pkg = isLib ? "" : minifyCode(isProd
-  ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8"));
+  ? (hasLegacyBundle ? fs.readFileSync(path.join(excalidrawDistDir, "excalidraw.production.min.js"), "utf8") : fs.readFileSync(path.join(excalidrawDistDir, "prod/index.js"), "utf8"))
+  : (hasLegacyBundle ? fs.readFileSync(path.join(excalidrawDistDir, "excalidraw.development.js"), "utf8") : fs.readFileSync(path.join(excalidrawDistDir, "dev/index.js"), "utf8")));
 const react_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/react/umd/react.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react/umd/react.development.js", "utf8"));
@@ -97,9 +100,10 @@ const reactdom_pkg = isLib ? "" : minifyCode(isProd
 
 const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
 if (!isLib) {
+  const hasLegacyStyles = fs.existsSync(path.join(excalidrawDistDir, "styles.production.css"));
   const excalidraw_styles = isProd
-    ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.production.css", "utf8")
-    : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.development.css", "utf8");
+    ? (hasLegacyStyles ? fs.readFileSync(path.join(excalidrawDistDir, "styles.production.css"), "utf8") : fs.readFileSync(path.join(excalidrawDistDir, "prod/index.css"), "utf8"))
+    : (hasLegacyStyles ? fs.readFileSync(path.join(excalidrawDistDir, "styles.development.css"), "utf8") : fs.readFileSync(path.join(excalidrawDistDir, "dev/index.css"), "utf8"));
   const plugin_styles = fs.readFileSync("./styles.css", "utf8");
   const styles = excalidraw_styles + plugin_styles;
   cssnano()

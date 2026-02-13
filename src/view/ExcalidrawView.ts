@@ -863,8 +863,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!overrideEmbeddableIsEditingSelfDebounce && this.semaphores.embeddableIsEditingSelf) {
       return;
     }
-    //console.log("saving - embeddable not editing")
-    //debug({where:"save", preventReload, forcesave, semaphores:this.semaphores});
     if (this.semaphores.saving) {
       return;
     }
@@ -2033,7 +2031,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         !isEditingText &&
         !isEditingNewElement //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
-        //console.log("autosave");
         this.autosaveTimer = null;
         if (this.excalidrawAPI) {
           this.semaphores.autosaving = true;
@@ -2332,7 +2329,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //happen within 100 ms. When this happens the timer is cleared and the
     //next time reload triggers the file will be reloaded as normal.
     if (this.semaphores.embeddableIsEditingSelf) {
-      //console.log("reload - embeddable is editing")
       if(this.editingSelfResetTimer) {
         this.clearEmbeddableNodeIsEditingTimer();
         this.semaphores.embeddableIsEditingSelf = false;
@@ -2342,7 +2338,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       return;
     }
-    //console.log("reload - embeddable is not editing")
 
     if (this.semaphores.preventReload) {
       this.semaphores.preventReload = false;
@@ -2841,7 +2836,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(this.semaphores.embeddableIsEditingSelf) {
       return;
     }
-    //console.log("synchronizeWithData - embeddable is not editing");
     //check if saving, wait until not
     let counter = 0;
     while(this.semaphores.saving && counter++<30) {
@@ -5614,7 +5608,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             if (err?.name === "AbortError") {
               return { error: new Error("Request aborted") };
             }
-            console.log(err);
             return { error: new Error("Request failed") };
           }
         },
@@ -6144,6 +6137,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 saveToActiveFile: false,
               },
               desktopUIMode: calculateUIModeValue(this.plugin.settings),
+              useHoverToolbar: true,
               //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
             },
             initState: initdata?.appState,
@@ -6200,7 +6194,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     const React = this.packages.react;
     const ReactDOM = this.packages.reactDOM;
-    //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.clearDirty();
 
     this.excalidrawRoot = ReactDOM.createRoot(this.contentEl);
