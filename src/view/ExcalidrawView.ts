@@ -6014,8 +6014,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       //end of aweful hack
       
-      if (this.toolsPanelRef && this.toolsPanelRef.current) {
-        this.toolsPanelRef.current.updatePosition();
+      if (this.toolsPanelRef && this.toolsPanelRef.current && this.toolsPanelRef.current.state.visible) {
+        this.toolsPanelRef.current.setState({ visible: false });
       }
       if(this.ownerDocument !== document) {
         this.refreshCanvasOffset(); //because resizeobserver in Excalidraw does not seem to work when in Obsidian Window
@@ -6087,13 +6087,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if(!toolsPanelRef || !toolsPanelRef.current) return;
         const { width, height } = entries[0].contentRect;
         if(width===0 || height ===0) return;
-        const dx = toolsPanelRef.current.onRightEdge
-          ? toolsPanelRef.current.previousWidth - width
-          : 0;
-        const dy = toolsPanelRef.current.onBottomEdge
-          ? toolsPanelRef.current.previousHeight - height
-          : 0;
-        toolsPanelRef.current.updatePosition(dy, dx);
+        // Hide popup panel on resize
+        if(toolsPanelRef.current.state.visible) {
+          toolsPanelRef.current.setState({ visible: false });
+        }
       }),
     );
 

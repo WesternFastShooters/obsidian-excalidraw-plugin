@@ -143,11 +143,9 @@ export class ObsidianMenu {
     this.prevClickTimestamp = now;
   }
 
-  private actionShowHideMenu (isMobile: boolean, appState: AppState) {
+  private actionShowHideMenu (isMobile: boolean, appState: AppState, e: React.MouseEvent) {
     this.toolsRef.current.setTheme(appState.theme);
-    this.toolsRef.current.toggleVisibility(
-      appState.zenModeEnabled || isMobile,
-    );
+    this.toolsRef.current.toggleVisibility(e.currentTarget as HTMLElement);
   }
 
   private actionInsertAnyFile() {

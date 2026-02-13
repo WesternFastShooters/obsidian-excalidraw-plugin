@@ -1103,3 +1103,128 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-filetype-tag {
     order: 99;
 }
+
+/* ========== Tray mode layout overrides ========== */
+
+/* 1. Bottom bar aligned to the right */
+.excalidraw--tray.excalidraw .App-bottom-bar {
+  justify-content: flex-end !important;
+  left: auto !important;
+  right: 0 !important;
+}
+
+/* 2. Hamburger menu button at the rightmost position in toolbar */
+.excalidraw--tray .App-toolbar-content .main-menu-trigger {
+  order: 99;
+  margin-left: auto;
+}
+
+/* 3. Zoom controls moved to the left of the action toolbar */
+.excalidraw--tray.excalidraw .App-bottom-bar > .Island:last-child {
+  order: -1;
+  margin-left: 0 !important;
+  margin-right: 4px;
+}
+
+/* 4. tray-misc-tools-container pushed to the top, aligned with shapes toolbar */
+.excalidraw .tray-misc-tools-container {
+  top: 10px !important;
+}
+
+/* 5. Tools panel popup styles */
+.excalidraw .tools-panel-popup {
+  position: absolute;
+  z-index: 5;
+}
+
+.excalidraw .tools-panel-arrow {
+  position: absolute;
+  right: -10px;
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 10px solid var(--island-bg-color);
+  filter: drop-shadow(2px 0 1px rgba(0,0,0,0.1));
+}
+
+/* ========== Context menu (Ant Design Dropdown-like) ========== */
+/* Visual reference: https://ant.design/components/dropdown-cn */
+.excalidraw .popover.context-menu-popover {
+  /* override earlier generic .popover reset */
+  background-color: var(--popup-bg-color, var(--island-bg-color)) !important;
+  border: 1px solid var(--sidebar-border-color, rgba(0, 0, 0, 0.08)) !important;
+  border-radius: 8px !important;
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12),
+    0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  padding: 4px !important;
+  overflow: visible !important;
+}
+
+.excalidraw .popover.context-menu-popover .context-menu {
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  min-width: 220px;
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item {
+  border-radius: 6px;
+  padding: 6px 12px;
+  line-height: 20px;
+  font-size: 14px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.excalidraw.theme--dark .popover.context-menu-popover .context-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item:active {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.excalidraw.theme--dark .popover.context-menu-popover .context-menu-item:active {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item:focus-visible {
+  outline: 2px solid rgba(22, 119, 255, 0.35);
+  outline-offset: 1px;
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item__label {
+  font-weight: 400;
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item__shortcut {
+  opacity: 1;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.65);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.excalidraw.theme--dark .popover.context-menu-popover .context-menu-item__shortcut {
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.excalidraw .popover.context-menu-popover .context-menu-item-separator {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 4px 0;
+}
+
+.excalidraw.theme--dark .popover.context-menu-popover .context-menu-item-separator {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}

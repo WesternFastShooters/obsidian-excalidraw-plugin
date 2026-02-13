@@ -34,9 +34,9 @@ export type PanelState = {
   visible: boolean;
   top: number;
   left: number;
+  arrowTop: number;
   theme: "dark" | "light";
   excalidrawViewMode: boolean;
-  minimized: boolean;
   isDirty: boolean;
   isFullscreen: boolean;
   isPreviewMode: boolean;
@@ -46,16 +46,6 @@ export type PanelState = {
 const TOOLS_PANEL_WIDTH = () => REM_VALUE * 14.4;
 
 export class ToolsPanel extends React.Component<PanelProps, PanelState> {
-  pos1: number = 0;
-  pos2: number = 0;
-  pos3: number = 0;
-  pos4: number = 0;
-  penDownX: number = 0;
-  penDownY: number = 0;
-  previousWidth: number = 0;
-  previousHeight: number = 0;
-  onRightEdge: boolean = false;
-  onBottomEdge: boolean = false;
   public containerRef: React.RefObject<HTMLDivElement>;
   private getView(): ExcalidrawView | null {
     return this.props.view?.deref() ?? null;
@@ -77,9 +67,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       visible: props.visible,
       top: 50,
       left: 200,
+      arrowTop: 10,
       theme: "dark",
       excalidrawViewMode: false,
-      minimized: false,
       isDirty: false,
       isFullscreen: false,
       isPreviewMode: true,
@@ -130,14 +120,36 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     });
   }
 
-  toggleVisibility(isMobileOrZen: boolean) {
+  toggleVisibility(buttonEl?: HTMLElement) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleVisibility,"ToolsPanel.toggleVisibility()");
-    this.setTopCenter(isMobileOrZen);
-    this.setState((prevState: PanelState) => {
-      return {
-        visible: !prevState.visible,
-      };
-    });
+    if (this.state.visible) {
+      this.setState({ visible: false });
+    } else if (buttonEl) {
+      this.positionNearButton(buttonEl);
+      this.setState({ visible: true });
+    }
+  }
+
+  positionNearButton(buttonEl: HTMLElement) {
+    if (!this.containerRef.current) return;
+    const containerRect = this.containerRef.current.getBoundingClientRect();
+    const buttonRect = buttonEl.getBoundingClientRect();
+    
+    const panelWidth = TOOLS_PANEL_WIDTH();
+    const arrowSize = 10;
+    const arrowTopOffset = 10;
+    
+    // Position panel to the left of the button with gap for arrow
+    let left = buttonRect.left - containerRect.left - panelWidth - arrowSize;
+    // Align panel top so the arrow tip is vertically centered with the button
+    const buttonCenterY = buttonRect.top + buttonRect.height / 2 - containerRect.top;
+    let top = buttonCenterY - arrowTopOffset - arrowSize; // arrowSize = half of arrow height offset
+    
+    // Ensure panel stays within bounds
+    if (left < 0) left = 4;
+    if (top < 0) top = 4;
+    
+    this.setState({ top, left, arrowTop: arrowTopOffset });
   }
 
   setTheme(theme: "dark" | "light") {
@@ -145,64 +157,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.setState((prevState: PanelState) => {
       return {
         theme,
-      };
-    });
-  }
-
-  setTopCenter(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTopCenter,"ToolsPanel.setTopCenter()");
-    this.setState(() => {
-      return {
-        left:
-          (this.containerRef.current.clientWidth -
-            TOOLS_PANEL_WIDTH() -
-            (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH() + 4)) /
-            2 +
-          this.containerRef.current.parentElement.offsetLeft +
-          (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH() + 4),
-        top: 64 + this.containerRef.current.parentElement.offsetTop,
-      };
-    });
-  }
-
-  updatePosition(deltaY: number = 0, deltaX: number = 0) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updatePosition,"ToolsPanel.updatePosition()");
-    this.setState(() => {
-      const {
-        offsetTop,
-        offsetLeft,
-        clientWidth: width,
-        clientHeight: height,
-      } = this.containerRef.current.firstElementChild as HTMLElement;
-
-      const top = offsetTop - deltaY;
-      const left = offsetLeft - deltaX;
-
-      const {
-        clientWidth: parentWidth,
-        clientHeight: parentHeight,
-        offsetTop: parentOffsetTop,
-        offsetLeft: parentOffsetLeft,
-      } = this.containerRef.current.parentElement;
-
-      this.previousHeight = parentHeight;
-      this.previousWidth = parentWidth;
-      this.onBottomEdge = top >= parentHeight - height + parentOffsetTop;
-      this.onRightEdge = left >= parentWidth - width + parentOffsetLeft;
-
-      return {
-        top:
-          top < parentOffsetTop
-            ? parentOffsetTop
-            : this.onBottomEdge
-            ? parentHeight - height + parentOffsetTop
-            : top,
-        left:
-          left < parentOffsetLeft
-            ? parentOffsetLeft
-            : this.onRightEdge
-            ? parentWidth - width + parentOffsetLeft
-            : left,
       };
     });
   }
@@ -438,46 +392,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     getExcalidrawViews(plugin.app).forEach(excalidrawView=>excalidrawView.updatePinnedScripts());
   }
 
-  private islandOnClick(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
-    event.preventDefault();
-    if (
-      Math.abs(this.penDownX - this.pos3) > 5 ||
-      Math.abs(this.penDownY - this.pos4) > 5
-    ) {
-      return;
-    }
-    this.setState((prevState: PanelState) => {
-      return {
-        minimized: !prevState.minimized,
-      };
-    });
-  }
-
-  private islandOnPointerDown(event: React.PointerEvent) {
-    const view = this.getView();
-    if (!view) return;
-
-    const onDrag = (e: PointerEvent) => {
-      e.preventDefault();
-      this.pos1 = this.pos3 - e.clientX;
-      this.pos2 = this.pos4 - e.clientY;
-      this.pos3 = e.clientX;
-      this.pos4 = e.clientY;
-      this.updatePosition(this.pos2, this.pos1);
-    };
-
-    const onPointerUp = () => {
-      view.ownerDocument?.removeEventListener("pointerup", onPointerUp);
-      view.ownerDocument?.removeEventListener("pointermove", onDrag);
-    };
-
-    event.preventDefault();
-    this.penDownX = this.pos3 = event.clientX;
-    this.penDownY = this.pos4 = event.clientY;
-    view.ownerDocument.addEventListener("pointerup", onPointerUp);
-    view.ownerDocument.addEventListener("pointermove", onDrag);
-  };
-
   render() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render,"ToolsPanel.render()");
     return (
@@ -491,10 +405,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           height: "100%",
           position: "absolute",
           touchAction: "none",
+          pointerEvents: this.state.visible && !this.state.excalidrawViewMode ? "auto" : "none",
+        }}
+        onClick={(e: React.MouseEvent) => {
+          // Close popup when clicking on the overlay (outside the panel)
+          if (e.target === e.currentTarget && this.state.visible) {
+            this.setState({ visible: false });
+          }
         }}
       >
         <div
-          className="Island"
+          className="Island tools-panel-popup"
           style={{
             top: `${this.state.top}px`,
             left: `${this.state.left}px`,
@@ -506,39 +427,23 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             height: "fit-content",
             maxHeight: "400px",
             zIndex: 5,
+            pointerEvents: "auto",
           }}
         >
           <div
+            className="tools-panel-arrow"
             style={{
-              height: "26px",
-              width: "100%",
-              cursor: "move",
+              top: `${this.state.arrowTop}px`,
             }}
-            onClick={this.islandOnClick.bind(this)}
-            onPointerDown={this.islandOnPointerDown.bind(this)}
-          >
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              role="img"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 228 26"
-            >
-              <path
-                stroke="var(--icon-fill-color)"
-                strokeWidth="2"
-                d="M40,7 h148 M40,13 h148 M40,19 h148"
-              />
-            </svg>
-          </div>
+          />
           <div
             className="Island App-menu__left scrollbar"
             style={{
-              maxHeight: "350px",
+              maxHeight: "380px",
               width: "initial",
               //@ts-ignore
               "--padding": "0.125rem",
-              display: this.state.minimized ? "none" : "block",
+              display: "block",
             }}
           >
             <div className="selected-shape-actions">
