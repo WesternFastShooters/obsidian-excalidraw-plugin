@@ -1228,3 +1228,134 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw.theme--dark .popover.context-menu-popover .context-menu-item-separator {
   border-top-color: rgba(255, 255, 255, 0.12);
 }
+
+/* ======= Inline Excalidraw: Preview ======= */
+
+.excalidraw-inline-preview {
+  position: relative;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--background-primary);
+  min-height: 100px;
+}
+
+.excalidraw-inline-preview svg {
+  display: block;
+  max-height: 600px;
+  object-fit: contain;
+}
+
+.excalidraw-inline-edit-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.excalidraw-inline-preview:hover .excalidraw-inline-edit-btn {
+  opacity: 1;
+}
+
+.excalidraw-inline-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.excalidraw-inline-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.excalidraw-inline-create-btn:hover {
+  opacity: 0.9;
+}
+
+.excalidraw-inline-error {
+  padding: 12px 16px;
+  color: var(--text-error);
+  background: var(--background-modifier-error);
+  border-radius: 6px;
+}
+
+/* ======= Inline Excalidraw: Editor Modal ======= */
+
+.excalidraw-editor-modal {
+  width: 95vw !important;
+  max-width: 95vw !important;
+  height: 90vh !important;
+  max-height: 90vh !important;
+  overflow: hidden;
+}
+
+.excalidraw-editor-modal .modal-close-button {
+  z-index: 100;
+}
+
+.excalidraw-editor-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.excalidraw-editor-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide hamburger menu */
+.excalidraw-editor-modal .main-menu-trigger {
+  display: none !important;
+}
+
+/* Hide right-side Obsidian toolbar */
+.excalidraw-editor-modal .ExcalidrawObsidianMenu {
+  display: none !important;
+}
+
+/* Hide library sidebar trigger */
+.excalidraw-editor-modal .sidebar-trigger__label-element {
+  display: none !important;
+}
+
+/* Hide lock button */
+.excalidraw-editor-modal .ToolIcon__lock {
+  display: none !important;
+}
+
+/* Hide embeddable background card (canvas-node container) */
+.excalidraw-editor-modal .excalidraw__embeddable-container__inner .canvas-node {
+  display: none !important;
+}
+
+/* Semi-transparent background overlay */
+.excalidraw-editor-modal-bg {
+  cursor: pointer;
+}

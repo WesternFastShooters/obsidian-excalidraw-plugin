@@ -42,6 +42,7 @@ import {
 import { ExcalidrawSettings, DEFAULT_SETTINGS, ExcalidrawSettingTab } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { initExcalidrawAutomate, insertLaTeXToView } from "src/utils/excalidrawAutomateUtils";
+import { inlineExcalidrawProcessor } from "./managers/InlineExcalidrawProcessor";
 import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {
@@ -486,6 +487,14 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Script install-codeblock processor registered");
 
+    try {
+      this.registerInlineExcalidrawProcessor();
+    } catch (e) {
+      new Notice("Error registering inline excalidraw processor", 6000);
+      console.error("Error registering inline excalidraw processor", e);
+    }
+    this.logStartupEvent("Inline excalidraw processor registered");
+
     this.commandManager.initialize();
 
     try {
@@ -867,6 +876,19 @@ export default class ExcalidrawPlugin extends Plugin {
           codeblockProcessor(source, el);
         });
         codeblockProcessor(source, el);
+      },
+    );
+  }
+
+  private registerInlineExcalidrawProcessor() {
+    const self = this;
+    this.registerMarkdownCodeBlockProcessor(
+      "excalidraw",
+      async (source, el, ctx) => {
+        const file = self.app.vault.getAbstractFileByPath(ctx.sourcePath);
+        if (file instanceof TFile && self.isExcalidrawFile(file)) return;
+
+        await inlineExcalidrawProcessor(source, el, ctx, self);
       },
     );
   }
