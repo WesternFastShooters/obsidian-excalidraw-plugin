@@ -884,11 +884,11 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.registerMarkdownCodeBlockProcessor(
       "excalidraw",
-      async (source, el, ctx) => {
+      (source, el, ctx) => {
         const file = self.app.vault.getAbstractFileByPath(ctx.sourcePath);
         if (file instanceof TFile && self.isExcalidrawFile(file)) return;
 
-        await inlineExcalidrawProcessor(source, el, ctx, self);
+        inlineExcalidrawProcessor(source, el, ctx, self);
       },
     );
   }

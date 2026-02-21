@@ -4,7 +4,6 @@ import {
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { InlineExcalidrawModal } from "src/view/InlineExcalidrawModal";
-import { getSVG } from "src/utils/utils";
 
 export interface InlineExcalidrawScene {
   type: string;
@@ -15,17 +14,9 @@ export interface InlineExcalidrawScene {
   files?: Record<string, any>;
 }
 
-const svgCache = new Map<string, SVGSVGElement>();
-const MAX_CACHE_SIZE = 50;
+const reactRoots = new WeakMap<HTMLElement, any>();
 
-function getCacheKey(sceneData: InlineExcalidrawScene): string {
-  if (!sceneData.elements || sceneData.elements.length === 0) return "";
-  return sceneData.elements
-    .map((el: any) => `${el.id}:${el.versionNonce}`)
-    .join(",");
-}
-
-export async function inlineExcalidrawProcessor(
+export function inlineExcalidrawProcessor(
   source: string,
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
@@ -57,7 +48,128 @@ export async function inlineExcalidrawProcessor(
     return;
   }
 
-  await renderPreview(el, sceneData, trimmed, ctx, plugin);
+  const elements = (sceneData.elements || []).filter((e: any) => !e.isDeleted);
+  if (elements.length === 0) {
+    renderEmptyState(el, ctx, plugin);
+    return;
+  }
+
+  renderViewMode(el, sceneData, trimmed, ctx, plugin);
+}
+
+function renderViewMode(
+  container: HTMLElement,
+  sceneData: InlineExcalidrawScene,
+  rawSource: string,
+  ctx: MarkdownPostProcessorContext,
+  plugin: ExcalidrawPlugin,
+) {
+  const wrapper = container.createDiv({ cls: "excalidraw-inline-preview" });
+
+  const editBtn = wrapper.createEl("button", {
+    cls: "excalidraw-inline-edit-btn",
+    attr: { "aria-label": "编辑 Excalidraw" },
+  });
+  setIcon(editBtn, "pencil");
+  editBtn.appendText(" 编辑");
+  editBtn.addEventListener("click", () => {
+    const modal = new InlineExcalidrawModal(
+      plugin.app, plugin, sceneData, rawSource, ctx, container,
+    );
+    modal.open();
+  });
+
+  const excalidrawContainer = wrapper.createDiv({
+    cls: "excalidraw-inline-view-container",
+  });
+
+  mountExcalidrawViewMode(excalidrawContainer, sceneData, plugin);
+
+  const observer = new MutationObserver(() => {
+    if (!container.isConnected) {
+      unmountReactRoot(excalidrawContainer);
+      observer.disconnect();
+    }
+  });
+  observer.observe(container.parentElement ?? document.body, { childList: true, subtree: true });
+}
+
+function mountExcalidrawViewMode(
+  container: HTMLElement,
+  sceneData: InlineExcalidrawScene,
+  plugin: ExcalidrawPlugin,
+) {
+  const packages = plugin.getPackage(window);
+  if (!packages) {
+    const retry = () => {
+      const pkg = plugin.getPackage(window);
+      if (pkg) {
+        doMount(container, sceneData, pkg);
+      } else {
+        setTimeout(retry, 200);
+      }
+    };
+    setTimeout(retry, 200);
+    return;
+  }
+
+  doMount(container, sceneData, packages);
+}
+
+function doMount(
+  container: HTMLElement,
+  sceneData: InlineExcalidrawScene,
+  packages: any,
+) {
+  const React = packages.react;
+  const ReactDOM = packages.reactDOM;
+  const { Excalidraw } = packages.excalidrawLib;
+
+  const initialData = {
+    elements: sceneData.elements || [],
+    appState: {
+      ...(sceneData.appState || {}),
+      collaborators: new Map(),
+    },
+    files: sceneData.files || {},
+  };
+
+  const ViewModeWrapper = () => {
+    return React.createElement(
+      "div",
+      {
+        className: "excalidraw-wrapper",
+        style: { width: "100%", height: "100%" },
+      },
+      React.createElement(Excalidraw, {
+        initialData,
+        viewModeEnabled: true,
+        UIOptions: {
+          canvasActions: {
+            loadScene: false,
+            saveScene: false,
+            saveAsScene: false,
+            export: false,
+            saveAsImage: false,
+            saveToActiveFile: false,
+            changeViewBackgroundColor: false,
+          },
+        },
+      }),
+    );
+  };
+
+  const root = ReactDOM.createRoot(container);
+  root.render(React.createElement(ViewModeWrapper));
+  reactRoots.set(container, root);
+}
+
+function unmountReactRoot(container: HTMLElement) {
+  const root = reactRoots.get(container);
+  if (root) {
+    root.unmount();
+    reactRoots.delete(container);
+  }
 }
 
 function renderEmptyState(
@@ -84,78 +196,4 @@ function renderEmptyState(
     );
     modal.open();
   });
-}
-
-async function renderPreview(
-  container: HTMLElement,
-  sceneData: InlineExcalidrawScene,
-  rawSource: string,
-  ctx: MarkdownPostProcessorContext,
-  plugin: ExcalidrawPlugin,
-) {
-  const elements = (sceneData.elements || []).filter((el: any) => !el.isDeleted);
-
-  if (elements.length === 0) {
-    renderEmptyState(container, ctx, plugin);
-    return;
-  }
-
-  let svg: SVGSVGElement;
-  const cacheKey = getCacheKey(sceneData);
-
-  if (cacheKey && svgCache.has(cacheKey)) {
-    svg = svgCache.get(cacheKey)!.cloneNode(true) as SVGSVGElement;
-  } else {
-    try {
-      svg = await getSVG(
-        {
-          elements,
-          appState: sceneData.appState || {},
-          files: sceneData.files ?? {},
-        },
-        {
-          withBackground: true,
-          withTheme: true,
-          isMask: false,
-          skipInliningFonts: true,
-        },
-        16,
-        null,
-      );
-
-      if (cacheKey) {
-        svgCache.set(cacheKey, svg.cloneNode(true) as SVGSVGElement);
-        if (svgCache.size > MAX_CACHE_SIZE) {
-          const firstKey = svgCache.keys().next().value;
-          if (firstKey) svgCache.delete(firstKey);
-        }
-      }
-    } catch (e) {
-      console.error("Excalidraw inline preview: failed to render SVG", e);
-      container.createEl("p", {
-        text: "⚠️ Failed to render Excalidraw preview",
-        cls: "excalidraw-inline-error",
-      });
-      return;
-    }
-  }
-
-  const wrapper = container.createDiv({ cls: "excalidraw-inline-preview" });
-
-  const editBtn = wrapper.createEl("button", {
-    cls: "excalidraw-inline-edit-btn",
-    attr: { "aria-label": "编辑 Excalidraw" },
-  });
-  setIcon(editBtn, "pencil");
-  editBtn.appendText(" 编辑");
-  editBtn.addEventListener("click", () => {
-    const modal = new InlineExcalidrawModal(
-      plugin.app, plugin, sceneData, rawSource, ctx, container,
-    );
-    modal.open();
-  });
-
-  svg.setAttribute("width", "100%");
-  svg.removeAttribute("height");
-  wrapper.appendChild(svg);
 }
