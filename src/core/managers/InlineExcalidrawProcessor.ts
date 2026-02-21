@@ -132,6 +132,7 @@ function doMount(
       collaborators: new Map(),
     },
     files: sceneData.files || {},
+    scrollToContent: true,
   };
 
   const ViewModeWrapper = () => {
