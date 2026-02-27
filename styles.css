@@ -1250,31 +1250,33 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-inline-preview .sidebar-trigger__label-element,
 .excalidraw-inline-preview .ToolIcon__lock,
 .excalidraw-inline-preview .tray-misc-tools-container,
+.excalidraw-inline-preview .layer-ui__wrapper__footer-left,
+.excalidraw-inline-preview .layer-ui__wrapper__footer-right,
 .excalidraw-inline-preview .excalidraw__embeddable-container__inner .canvas-node {
   display: none !important;
 }
 
-.excalidraw-inline-edit-btn {
+.excalidraw-scroll-back-btn {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
-  display: flex;
+  display: none;
   align-items: center;
   gap: 4px;
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 6px;
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   border: none;
   cursor: pointer;
   font-size: 13px;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.excalidraw-inline-preview:hover .excalidraw-inline-edit-btn {
-  opacity: 1;
+.excalidraw-scroll-back-btn:hover {
+  opacity: 0.9;
 }
 
 .excalidraw-inline-empty {
@@ -1361,6 +1363,16 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 
 /* Hide embeddable background card (canvas-node container) */
 .excalidraw-editor-modal .excalidraw__embeddable-container__inner .canvas-node {
+  display: none !important;
+}
+
+/* Move zoom and undo/redo controls to bottom-right in modal */
+.excalidraw-editor-modal .layer-ui__wrapper__footer-left {
+  order: 2;
+  margin-left: auto;
+}
+
+.excalidraw-editor-modal .layer-ui__wrapper__footer-right {
   display: none !important;
 }
 

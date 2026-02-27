@@ -118,9 +118,15 @@ export class InlineExcalidrawModal extends Modal {
           style: { width: "100%", height: "100%" },
         },
         React.createElement(Excalidraw, {
-          excalidrawAPI: (api: any) => { self.excalidrawAPI = api; },
+          excalidrawAPI: (api: any) => {
+            self.excalidrawAPI = api;
+            if (api) {
+              setTimeout(() => api.scrollToContent(), 200);
+            }
+          },
           initialData,
           UIOptions: {
+            useHoverToolbar: true,
             canvasActions: {
               loadScene: false,
               saveScene: false,

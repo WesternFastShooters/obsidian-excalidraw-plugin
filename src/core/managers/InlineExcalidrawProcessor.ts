@@ -66,24 +66,25 @@ function renderViewMode(
 ) {
   const wrapper = container.createDiv({ cls: "excalidraw-inline-preview" });
 
-  const editBtn = wrapper.createEl("button", {
-    cls: "excalidraw-inline-edit-btn",
-    attr: { "aria-label": "编辑 Excalidraw" },
+  const scrollBackBtn = wrapper.createEl("button", {
+    cls: "excalidraw-scroll-back-btn",
+    attr: { "aria-label": "滚动回到内容" },
   });
-  setIcon(editBtn, "pencil");
-  editBtn.appendText(" 编辑");
-  editBtn.addEventListener("click", () => {
-    const modal = new InlineExcalidrawModal(
-      plugin.app, plugin, sceneData, rawSource, ctx, container,
-    );
-    modal.open();
-  });
+  setIcon(scrollBackBtn, "locate-fixed");
+  scrollBackBtn.appendText(" 滚动回到内容");
 
   const excalidrawContainer = wrapper.createDiv({
     cls: "excalidraw-inline-view-container",
   });
 
-  mountExcalidrawViewMode(excalidrawContainer, sceneData, plugin);
+  const openModal = () => {
+    const modal = new InlineExcalidrawModal(
+      plugin.app, plugin, sceneData, rawSource, ctx, container,
+    );
+    modal.open();
+  };
+
+  mountExcalidrawViewMode(excalidrawContainer, sceneData, plugin, openModal, scrollBackBtn);
 
   const observer = new MutationObserver(() => {
     if (!container.isConnected) {
@@ -98,13 +99,26 @@ function mountExcalidrawViewMode(
   container: HTMLElement,
   sceneData: InlineExcalidrawScene,
   plugin: ExcalidrawPlugin,
+  openModal: () => void,
+  scrollBackBtn: HTMLElement,
 ) {
-  const packages = plugin.getPackage(window);
+  let packages: any = null;
+  try {
+    packages = plugin.getPackage(window);
+  } catch {
+    // packageManager not yet initialized
+  }
+
   if (!packages) {
     const retry = () => {
-      const pkg = plugin.getPackage(window);
+      let pkg: any = null;
+      try {
+        pkg = plugin.getPackage(window);
+      } catch {
+        // still not initialized
+      }
       if (pkg) {
-        doMount(container, sceneData, pkg);
+        doMount(container, sceneData, pkg, openModal, scrollBackBtn);
       } else {
         setTimeout(retry, 200);
       }
@@ -113,17 +127,25 @@ function mountExcalidrawViewMode(
     return;
   }
 
-  doMount(container, sceneData, packages);
+  doMount(container, sceneData, packages, openModal, scrollBackBtn);
 }
 
 function doMount(
   container: HTMLElement,
   sceneData: InlineExcalidrawScene,
   packages: any,
+  openModal: () => void,
+  scrollBackBtn: HTMLElement,
 ) {
   const React = packages.react;
   const ReactDOM = packages.reactDOM;
   const { Excalidraw } = packages.excalidrawLib;
+
+  let viewAPI: any = null;
+  let initialScrollX = 0;
+  let initialScrollY = 0;
+  let initialScrollDone = false;
+  let scrollCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   const initialData = {
     elements: sceneData.elements || [],
@@ -145,6 +167,33 @@ function doMount(
       React.createElement(Excalidraw, {
         initialData,
         viewModeEnabled: true,
+        excalidrawAPI: (api: any) => {
+          if (api) {
+            viewAPI = api;
+            setTimeout(() => {
+              api.scrollToContent();
+              setTimeout(() => {
+                try {
+                  const st = api.getAppState();
+                  initialScrollX = st.scrollX || 0;
+                  initialScrollY = st.scrollY || 0;
+                  initialScrollDone = true;
+                } catch { /* ignore */ }
+              }, 150);
+            }, 200);
+          }
+        },
+        onChange: (_elements: any, appState: any) => {
+          if (!initialScrollDone) return;
+          const sx = appState.scrollX || 0;
+          const sy = appState.scrollY || 0;
+          if (scrollCheckTimer) clearTimeout(scrollCheckTimer);
+          scrollCheckTimer = setTimeout(() => {
+            const dx = Math.abs(sx - initialScrollX);
+            const dy = Math.abs(sy - initialScrollY);
+            scrollBackBtn.style.display = (dx > 20 || dy > 20) ? "flex" : "none";
+          }, 100);
+        },
         UIOptions: {
           canvasActions: {
             loadScene: false,
@@ -163,6 +212,35 @@ function doMount(
   const root = ReactDOM.createRoot(container);
   root.render(React.createElement(ViewModeWrapper));
   reactRoots.set(container, root);
+
+  const hookDisableViewModeBtn = (retries = 0) => {
+    if (retries > 25) return;
+    const btn = container.querySelector("button.disable-view-mode");
+    if (btn) {
+      btn.addEventListener("click", (e) => {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        openModal();
+      }, { capture: true });
+    } else {
+      setTimeout(() => hookDisableViewModeBtn(retries + 1), 250);
+    }
+  };
+  setTimeout(() => hookDisableViewModeBtn(), 300);
+
+  scrollBackBtn.addEventListener("click", () => {
+    if (viewAPI) {
+      viewAPI.scrollToContent();
+      scrollBackBtn.style.display = "none";
+      setTimeout(() => {
+        try {
+          const st = viewAPI.getAppState();
+          initialScrollX = st.scrollX || 0;
+          initialScrollY = st.scrollY || 0;
+        } catch { /* ignore */ }
+      }, 200);
+    }
+  });
 }
 
 function unmountReactRoot(container: HTMLElement) {

@@ -328,6 +328,14 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Markdown post processor added");
 
+    try {
+      this.registerInlineExcalidrawProcessor();
+    } catch (e) {
+      new Notice("Error registering inline excalidraw processor", 6000);
+      console.error("Error registering inline excalidraw processor", e);
+    }
+    this.logStartupEvent("Inline excalidraw processor registered (early)");
+
     this.app.workspace.onLayoutReady(this.onloadOnLayoutReady.bind(this));
     this.logStartupEvent("Workspace ready event handler added");
   }
@@ -487,14 +495,6 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Script install-codeblock processor registered");
 
-    try {
-      this.registerInlineExcalidrawProcessor();
-    } catch (e) {
-      new Notice("Error registering inline excalidraw processor", 6000);
-      console.error("Error registering inline excalidraw processor", e);
-    }
-    this.logStartupEvent("Inline excalidraw processor registered");
-
     this.commandManager.initialize();
 
     try {
@@ -512,6 +512,21 @@ export default class ExcalidrawPlugin extends Plugin {
       console.error("Error setting up property types", e);
     }
     this.logStartupEvent("Property types set");
+
+    this.rerenderInlineExcalidrawViews();
+  }
+
+  private rerenderInlineExcalidrawViews() {
+    setTimeout(() => {
+      this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+        try {
+          const view = leaf.view;
+          if (view instanceof MarkdownView && view.previewMode) {
+            view.previewMode.rerender(true);
+          }
+        } catch { /* ignore */ }
+      });
+    }, 300);
   }
 
   public async awaitSettings() {
@@ -885,10 +900,20 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerMarkdownCodeBlockProcessor(
       "excalidraw",
       (source, el, ctx) => {
-        const file = self.app.vault.getAbstractFileByPath(ctx.sourcePath);
-        if (file instanceof TFile && self.isExcalidrawFile(file)) return;
+        try {
+          const file = self.app.vault.getAbstractFileByPath(ctx.sourcePath);
+          if (file instanceof TFile && self.isExcalidrawFile(file)) return;
+        } catch { /* ignore during early init */ }
 
-        inlineExcalidrawProcessor(source, el, ctx, self);
+        try {
+          inlineExcalidrawProcessor(source, el, ctx, self);
+        } catch (e) {
+          console.error("Inline excalidraw processor error:", e);
+          el.createEl("p", {
+            text: "⚠️ Error rendering Excalidraw preview",
+            cls: "excalidraw-inline-error",
+          });
+        }
       },
     );
   }
